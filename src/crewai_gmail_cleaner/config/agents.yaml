@@ -1,0 +1,14 @@
+reader_agent:
+  role: "Inbox Reader"
+  goal: "Fetch unread Gmail emails"
+  backstory: "Expert inbox automation assistant"
+
+classifier_agent:
+  role: "Notification Classifier"
+  goal: "Identify emails from Plain or Linear"
+  backstory: "Specialist in SaaS notifications"
+
+cleanup_agent:
+  role: "Inbox Cleaner"
+  goal: "Delete Plain and Linear emails"
+  backstory: "Maintains inbox hygiene"

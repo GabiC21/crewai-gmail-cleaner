@@ -1,34 +1,24 @@
-"""Crew definition for Gmail Cleaner (Plain/Linear notifications)."""
-
-from langchain.tools import Tool
+"""Crew definition for Gmail Cleaner."""
 
 from crewai import Agent, Crew, Task
-
+from crewai.tools import tool
 from crewai_gmail_cleaner.tools.gmail_tools import delete_email, fetch_unread
 
 
-def _fetch_unread_tool() -> str:
+@tool("fetch_unread_emails")
+def fetch_unread_emails() -> str:
+    """Fetches unread emails from Gmail. Returns message objects with 'id' and 'threadId'."""
     messages = fetch_unread()
     if not messages:
         return "No unread messages."
     return str(messages)
 
 
-def _delete_email_tool(message_id: str) -> str:
+@tool("delete_email")
+def delete_email_tool(message_id: str) -> str:
+    """Moves an email to trash by message ID. Input must be the message id string."""
     return delete_email(message_id)
 
-
-fetch_unread_emails = Tool.from_function(
-    func=_fetch_unread_tool,
-    name="fetch_unread_emails",
-    description="Fetches unread emails from Gmail. Returns message objects with 'id' and 'threadId'.",
-)
-
-delete_email_tool = Tool.from_function(
-    func=_delete_email_tool,
-    name="delete_email",
-    description="Moves an email to trash by message ID. Input must be the message id string.",
-)
 
 reader_agent = Agent(
     role="Inbox Reader",
@@ -55,16 +45,19 @@ cleanup_agent = Agent(
 
 read_task = Task(
     description="Read unread emails from Gmail inbox",
+    expected_output="List of unread email IDs and thread IDs",
     agent=reader_agent,
 )
 
 classify_task = Task(
     description="Identify emails from plain.com or linear.app",
+    expected_output="List of email IDs that are from Plain or Linear",
     agent=classifier_agent,
 )
 
 cleanup_task = Task(
     description="Delete emails identified as notifications",
+    expected_output="Confirmation of deleted email IDs",
     agent=cleanup_agent,
 )
 

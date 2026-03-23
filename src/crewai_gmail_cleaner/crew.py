@@ -1,13 +1,12 @@
 """Crew definition for Gmail Cleaner."""
 
-from crewai import Agent, Crew, Task
-from crewai.tools import tool
+from crewai import Agent, Crew, Task, tool
 from crewai_gmail_cleaner.tools.gmail_tools import delete_email, fetch_unread
 
 
 @tool("fetch_unread_emails")
 def fetch_unread_emails() -> str:
-    """Fetches unread emails from Gmail. Returns message objects with 'id' and 'threadId'."""
+    """Fetches unread emails from Gmail. Returns message objects with id and threadId."""
     messages = fetch_unread()
     if not messages:
         return "No unread messages."

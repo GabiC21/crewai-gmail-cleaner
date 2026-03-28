@@ -1,5 +1,17 @@
 """Tools for the Gmail Cleaner crew."""
 
-from .gmail_tools import delete_email, fetch_unread, get_service
+from .gmail_tool import (
+    delete_email,
+    delete_email_tool,
+    fetch_unread,
+    fetch_unread_emails,
+    get_service,
+)
 
-__all__ = ["fetch_unread", "delete_email", "get_service"]
+__all__ = [
+    "delete_email",
+    "delete_email_tool",
+    "fetch_unread",
+    "fetch_unread_emails",
+    "get_service",
+]

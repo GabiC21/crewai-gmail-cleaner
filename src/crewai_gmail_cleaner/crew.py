@@ -1,69 +1,59 @@
-"""Crew definition for Gmail Cleaner."""
+"""Gmail Cleaner crew: YAML config; @tool/@agent from crewai.project; Tool objects from crewai.tools."""
 
-from crewai import Agent, Crew, Task, tool
-from crewai_gmail_cleaner.tools.gmail_tools import delete_email, fetch_unread
+from crewai import Agent, Crew, Task, Process
+from crewai.project import CrewBase, agent, crew, task, tool
 
-
-@tool("fetch_unread_emails")
-def fetch_unread_emails() -> str:
-    """Fetches unread emails from Gmail. Returns message objects with id and threadId."""
-    messages = fetch_unread()
-    if not messages:
-        return "No unread messages."
-    return str(messages)
+from crewai_gmail_cleaner.tools import gmail_tool
 
 
-@tool("delete_email")
-def delete_email_tool(message_id: str) -> str:
-    """Moves an email to trash by message ID. Input must be the message id string."""
-    return delete_email(message_id)
+@CrewBase
+class CrewaiGmailCleaner:
+    """Gmail Cleaner Crew"""
 
+    agents_config = "config/agents.yaml"
+    tasks_config = "config/tasks.yaml"
 
-reader_agent = Agent(
-    role="Inbox Reader",
-    goal="Fetch unread Gmail emails",
-    backstory="Expert inbox automation assistant",
-    tools=[fetch_unread_emails],
-    verbose=True,
-)
+    @tool
+    def fetch_unread_emails(self):
+        return gmail_tool.fetch_unread_emails
 
-classifier_agent = Agent(
-    role="Notification Classifier",
-    goal="Identify emails from Plain or Linear",
-    backstory="Specialist in SaaS notifications",
-    verbose=True,
-)
+    @tool
+    def delete_email_tool(self):
+        return gmail_tool.delete_email_tool
 
-cleanup_agent = Agent(
-    role="Inbox Cleaner",
-    goal="Delete Plain and Linear emails",
-    backstory="Maintains inbox hygiene",
-    tools=[delete_email_tool],
-    verbose=True,
-)
+    @agent
+    def reader_agent(self) -> Agent:
+        return Agent(config=self.agents_config["reader_agent"])
 
-read_task = Task(
-    description="Read unread emails from Gmail inbox",
-    expected_output="List of unread email IDs and thread IDs",
-    agent=reader_agent,
-)
+    @agent
+    def classifier_agent(self) -> Agent:
+        return Agent(config=self.agents_config["classifier_agent"])
 
-classify_task = Task(
-    description="Identify emails from plain.com or linear.app",
-    expected_output="List of email IDs that are from Plain or Linear",
-    agent=classifier_agent,
-)
+    @agent
+    def cleanup_agent(self) -> Agent:
+        return Agent(config=self.agents_config["cleanup_agent"])
 
-cleanup_task = Task(
-    description="Delete emails identified as notifications",
-    expected_output="Confirmation of deleted email IDs",
-    agent=cleanup_agent,
-)
+    @task
+    def read_task(self) -> Task:
+        return Task(config=self.tasks_config["read_task"])
+
+    @task
+    def classify_task(self) -> Task:
+        return Task(config=self.tasks_config["classify_task"])
+
+    @task
+    def cleanup_task(self) -> Task:
+        return Task(config=self.tasks_config["cleanup_task"])
+
+    @crew
+    def crew(self) -> Crew:
+        return Crew(
+            agents=self.agents,
+            tasks=self.tasks,
+            process=Process.sequential,
+            verbose=True,
+        )
 
 
 def get_crew() -> Crew:
-    return Crew(
-        agents=[reader_agent, classifier_agent, cleanup_agent],
-        tasks=[read_task, classify_task, cleanup_task],
-        verbose=True,
-    )
+    return CrewaiGmailCleaner().crew()

@@ -1,11 +1,40 @@
+# Task definitions for the Gmail Cleaner crew.
+# `agent` values must match @agent method names in agents.py.
+# `context` lists prior task method names whose outputs are injected into this task.
+
 read_task:
-  description: "Read unread emails from Gmail inbox"
+  description: >-
+    Use the inbox reader workflow to pull unread Gmail messages. Summarize what the
+    fetch_unread_emails tool returned: how many unread items exist, and for each item
+    include the Gmail message id and threadId (or state clearly if there are none).
+    Do not classify or delete anything in this step.
+  expected_output: >-
+    A concise list or table of unread messages with fields id and threadId (or the
+    exact string indicating no unread messages). No classification labels yet.
   agent: reader_agent
 
 classify_task:
-  description: "Identify emails from plain.com or linear.app"
+  description: >-
+    Using the read_task output as your only source of message identifiers and hints,
+    decide which messages are notification email from Plain (plain.com) or Linear
+    (linear.app). Explain briefly why each included id qualifies. Exclude anything
+    uncertain. If read_task reported no messages, output an empty candidate list and
+    explain.
+  expected_output: >-
+    A structured list of Gmail message ids approved for trashing, each with a one-line
+    justification (Plain vs Linear and signal used). If none, say "none" and why.
   agent: classifier_agent
+  context:
+    - read_task
 
 cleanup_task:
-  description: "Delete emails identified as notifications"
+  description: >-
+    Take the classifier's approved id list. For each id, call delete_email_tool once to
+    move the message to trash. Do not delete ids that were not in the approved list.
+    If the approved list is empty, do not call the tool; report that nothing was deleted.
+  expected_output: >-
+    A short confirmation listing each message id that was trashed, or a clear statement
+    that zero deletes ran (empty list or error). Any skipped ids must be noted with reason.
   agent: cleanup_agent
+  context:
+    - classify_task
